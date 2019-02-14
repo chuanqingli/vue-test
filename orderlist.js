@@ -8,7 +8,7 @@ Vue.component('vue-test',
             </select>
             <input v-model="sovalue">
             <br/><button @click="getuserinfo" :disabled="sobtnDisabled">查询</button>
-            <button @click="savehtml">下载</button>
+            <button @click="savehtml" :hidden="svbtnHidden">下载</button>
             <br/><div v-html="showdata"></div>
 </div>
 `
@@ -23,7 +23,7 @@ Vue.component('vue-test',
              sovalue:'',
              showdata:'',
              sobtnDisabled:false,
-             svbtnShow:false
+             svbtnHidden:true
                    };
                },
          methods:{
