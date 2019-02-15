@@ -1,4 +1,4 @@
-//用户消费列表
+//用户列表
 Vue.component('vue-test',
               {template:
                `<div>
@@ -7,8 +7,8 @@ Vue.component('vue-test',
                     {{ option.text }}
                 </option>
             </select>
-            <input v-model="sovalue">
-            <br/><button @click="getuserinfo" :disabled="sobtnDisabled">查询</button>
+            <br/><textarea v-model="sovalue" rows="12" cols="150"></textarea>
+            <br/><button @click="somoreuser" :disabled="sobtnDisabled">查询</button>
             <button @click="savehtml" :hidden="svbtnHidden">下载</button>
             <br/><div v-html="showdata"></div>
 </div>
@@ -26,38 +26,66 @@ Vue.component('vue-test',
                        ,sobtnDisabled:false
                        ,svbtnHidden:true
                        ,obj:this.getinitobj()
+                       ,dealBuff:[0,0,0]//总数,成功数,失败数
+                       ,buffary:[]
                    };
                }
                ,methods:{
-                   getuserinfo:function(){
-                       var vurl = ['getUserInfo?soflag=',this.soflag,'&sovalue=',this.sovalue].join('');
+                   somoreuser:function(){
+                       if(this.soflag<1||this.soflag>2){
+                           console.error('请求参数错:soflag',soflag);
+                           return;
+                       }
+                       var sss = this.sovalue.split(',');
+                       this.dealBuff=[sss.length,0,0];
+                       for(let key in sss)this.getuserinfo(this.soflag,sss[key]);
+                   }
+                   ,getuserinfo:function(){
+    var soflag = arguments[0];
+    var sovalue = arguments[1];
+                       var vurl = ['getUserInfo?soflag=',soflag,'&sovalue=',sovalue].join('');
+
+                       this.showdata=['正在查询数据==>',soflag,sovalue].join(' ');
+
+    var info = [0,''];
+    if(soflag==1){
+        info[0]=sovalue;
+    }else if(soflag==2){
+        info[1]=sovalue;
+    }
+
                        //发送get请求
-                       this.$http.get(vurl).then(function(res){
+                       var promise = this.$http.get(vurl);
+
+                           promise.then(function(res){
                            var bk=res.body;
                            console.log(vurl,"==>",bk);
+
                            if(bk.idw>0&&bk.strw.length>0){
-                               if(bk.idw==this.obj.idw){
-                                   return;
-                               }
-
-                               this.obj=this.getinitobj();
-                               this.obj.idw=bk.idw;
-                               this.obj.strw=bk.strw;
-
-                               this.sobtnDisabled=true;
-                               this.xflist(this.obj);
+                               this.dealBuff[1]++;
+            if(soflag==1){
+                info[1]=bk.strw;
+            }else if(soflag==2){
+                info[0]=bk.idw;
+            }
+            this.buffary.push(info.join('\t'));
+            console.log(bk.idw,'\t',bk.strw);
+            return;
                            }else{
-                               if(typeof(bk)== "string"){
-                                   this.showdata = bk;
-                               }
+                               this.dealBuff[2]++;
                            }
 
                        },function(){
+                               this.dealBuff[2]++;
                            console.error(vurl,'请求失败处理');
                        });
+                       promise.finally(function(){
+                           if(this.dealBuff[0]==(this.dealBuff[1]+this.dealBuff[2])){
+                               this.showdata=['数据处理完成==>',this.dealBuff].join(' ');
 
-
-                   }
+                           }
+                       });
+}
                    ,savehtml:function(){
                        if(!this.obj.resp)return;
                        var resp = [this.obj.html];
@@ -160,7 +188,7 @@ Vue.component('vue-test',
               });
 
 document.title='用户消费查询';
-var vm;// = new Vue({el:'#app'});
+var vm = new Vue({el:'#app'});
 window.onload = function(){
     vm = new Vue({
         el:'#app'
