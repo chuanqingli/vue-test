@@ -1,4 +1,3 @@
-//用户消费列表
 Vue.component('vue-test',
               {template:
                `<div>
@@ -32,8 +31,10 @@ Vue.component('vue-test',
                    getuserinfo:function(){
                        var vurl = ['getUserInfo?soflag=',this.soflag,'&sovalue=',this.sovalue].join('');
                        //发送get请求
-                       this.$http.get(vurl).then(function(res){
-                           var bk=res.body;
+                       var promise = axios.get(vurl);
+                       promise.then(res=>{
+                           console.log(res);
+                           var bk=res.data;
                            console.log(vurl,"==>",bk);
                            if(bk.idw>0&&bk.strw.length>0){
                                if(bk.idw==this.obj.idw){
@@ -46,64 +47,48 @@ Vue.component('vue-test',
 
                                this.sobtnDisabled=true;
                                this.xflist(this.obj);
-                           }else{
-                               if(typeof(bk)== "string"){
-                                   this.showdata = bk;
-                               }
+                               return;
+
                            }
-
-                       },function(){
-                           console.error(vurl,'请求失败处理');
+                           if(typeof(bk)== "string"){
+                               this.showdata = bk;
+                               return;
+                           }
+                           this.showdata = ['用户不存在==>',bk].join('');
                        });
-
-
+                       promise.catch(error=>{
+                           console.error(vurl,error);
+                       });
                    }
                    ,savehtml:function(){
-                       if(!this.obj.resp)return;
                        var resp = [this.obj.html];
-                       if(typeof(saveAs) == "function"){
-                           //以下代码要求FileSaver.js
-                           var file = new File(resp, "xflist.xlsx", {type: "html/plain;charset=utf-8"});
-                           saveAs(file);
-                           return;
-                       }
 
-                       if(typeof(streamSaver) == "object"){
-                           //以下代码要求StreamSaver.js
-                           const fileStream = streamSaver.createWriteStream('xflist.xlsx')
-                           const writer = fileStream.getWriter()
-                           const encoder = new TextEncoder
-                           let uint8array = encoder.encode(resp.join(''))
-
-                           writer.write(uint8array)
-                           writer.close()
-                           return;
+                       var respno = download(resp);
+                       if(respno<=0){
+                           console.error('未找到合适的下载插件');
                        }
-                       console.error('未找到合适的下载插件');
                    }
 
                    ,getinitobj:function(){
                        this.svbtnHidden=true;
                        this.showdata='';
-                       return {tindex:11,pageSize:500,pageNumber:1,idw:0,strw:'',dataList:[],lastData:{},resp:false};
+                       return {tindex:11,pageSize:500,pageNumber:1,idw:0,strw:'',dataList:[]};
                    }
 
 
-                   ,xflist:function(){
-
-                       var obj = arguments[0];
-
+                   ,xflist:function(obj){
                        var vurl = ['getConsumerPage?tindex=',obj.tindex,'&pageSize=',obj.pageSize,'&pageNumber=',obj.pageNumber,
                                    ,'&idw=',obj.idw].join('');
 
                        this.showdata=['正在查询数据==>',obj.tindex,obj.pageSize,obj.pageNumber,obj.idw,obj.strw].join(' ');
 
-                       this.$http.get(vurl).then(function(res){
-                           var bk=res.body;
+                       var promise = axios.get(vurl);
+
+                       promise.then(res=>{
+                           var bk=res.data;
                            console.log(bk);
                            console.log(obj);
 
-                           obj.lastData = bk.data;
                            if(bk.data==null){
                                this.checkexit(obj);
                                return;
@@ -119,28 +104,21 @@ Vue.component('vue-test',
                                console.log(obj);
                                this.xflist(obj);
                            }
-                       },function(){
-                           console.log('请求失败处理');
                        });
-
-
+                       promise.catch(error=>{
+                           console.error(vurl,error);
+                       });
                    }
-                   ,checkexit:function(){
-                       var obj = arguments[0];
+                   ,checkexit:function(obj){
                        if(obj.tindex<=0){
-                           // savefile(obj.dataList);
-                           obj.html=this.gethtml(obj.dataList);
-                           this.showhtml();
-                           this.sobtnDisabled=false;
-                           obj.resp=true;
+                           this.showhtml(obj);
                            return;
                        }
                        obj.tindex-=1;
                        obj.pageNumber=1;
                        this.xflist(obj);
                    }
-                   ,gethtml:function(){
-                       var list = arguments[0];
+                   ,gethtml:function(list){
                        var resp = ['<table border=1><tr><th>作品</th><th>章节</th><th>时间</th><th>贝数</th><th>消费类别</th></tr>'];
                        for(let key in list){
                            var map = list[key];
@@ -149,15 +127,36 @@ Vue.component('vue-test',
                        resp.push('</table>');
                        return resp.join('');
                    }
-                   ,showhtml(){
+                   ,showhtml:function(obj){
                        this.svbtnHidden=false;
-                       this.showdata=this.obj.html;
+                       this.showdata=this.gethtml(obj.dataList);
+                       this.sobtnDisabled=false;
                    }
-
-
-
                }
               });
+
+
+function download(resp){
+    if(typeof(saveAs) == "function"){
+        //以下代码要求FileSaver.js
+        var file = new File(resp, "xflist.xlsx", {type: "html/plain;charset=utf-8"});
+        saveAs(file);
+        return 1;
+    }
+
+    if(typeof(streamSaver) == "object"){
+        //以下代码要求StreamSaver.js
+        const fileStream = streamSaver.createWriteStream('xflist.xlsx')
+        const writer = fileStream.getWriter()
+        const encoder = new TextEncoder
+        let uint8array = encoder.encode(resp.join(''))
+
+        writer.write(uint8array)
+        writer.close()
+        return 2;
+    }
+    return -1;
+}
 
 document.title='用户消费查询';
 var vm;// = new Vue({el:'#app'});

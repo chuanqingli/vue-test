@@ -36,56 +36,54 @@ Vue.component('vue-test',
                            console.error('请求参数错:soflag',soflag);
                            return;
                        }
-                       var sss = this.sovalue.split(',');
-                       this.dealBuff=[sss.length,0,0];
-                       for(let key in sss)this.getuserinfo(this.soflag,sss[key]);
+                       var sss = new Set(this.sovalue.split(','));
+                       this.dealBuff=[sss.size,0,0];
+                       for(let key of sss)this.getuserinfo(this.soflag,sss[key]);
                    }
-                   ,getuserinfo:function(){
-    var soflag = arguments[0];
-    var sovalue = arguments[1];
+                   ,getuserinfo:function(soflag,sovalue){
                        var vurl = ['getUserInfo?soflag=',soflag,'&sovalue=',sovalue].join('');
 
                        this.showdata=['正在查询数据==>',soflag,sovalue].join(' ');
 
-    var info = [0,''];
-    if(soflag==1){
-        info[0]=sovalue;
-    }else if(soflag==2){
-        info[1]=sovalue;
-    }
+                       var info = [0,''];
+                       if(soflag==1){
+                           info[0]=sovalue;
+                       }else if(soflag==2){
+                           info[1]=sovalue;
+                       }
 
                        //发送get请求
-                       var promise = this.$http.get(vurl);
-
-                           promise.then(function(res){
-                           var bk=res.body;
+                       var promise = axios.get(vurl);
+                       promise.then(res=>{
+                           console.log(res);
+                           var bk=res.data;
                            console.log(vurl,"==>",bk);
-
                            if(bk.idw>0&&bk.strw.length>0){
                                this.dealBuff[1]++;
-            if(soflag==1){
-                info[1]=bk.strw;
-            }else if(soflag==2){
-                info[0]=bk.idw;
-            }
-            this.buffary.push(info.join('\t'));
-            console.log(bk.idw,'\t',bk.strw);
-            return;
+                               if(soflag==1){
+                                   info[1]=bk.strw;
+                               }else if(soflag==2){
+                                   info[0]=bk.idw;
+                               }
+                               this.buffary.push(info.join('\t'));
+                               console.log(bk.idw,'\t',bk.strw);
+                               return;
                            }else{
                                this.dealBuff[2]++;
                            }
-
-                       },function(){
-                               this.dealBuff[2]++;
-                           console.error(vurl,'请求失败处理');
                        });
+                       promise.catch(error=>{
+                           this.dealBuff[2]++;
+                           console.error(vurl,error);
+                       });
+
                        promise.finally(function(){
                            if(this.dealBuff[0]==(this.dealBuff[1]+this.dealBuff[2])){
                                this.showdata=['数据处理完成==>',this.dealBuff].join(' ');
 
                            }
                        });
-}
+                   }
                    ,savehtml:function(){
                        if(!this.obj.resp)return;
                        var resp = [this.obj.html];
