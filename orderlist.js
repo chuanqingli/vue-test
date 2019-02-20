@@ -54,16 +54,14 @@ Vue.component('vue-test',
                                this.showdata = bk;
                                return;
                            }
-                           this.showdata = ['用户不存在==>',bk].join('');
+                           this.showdata = ['用户不存在==>',JSON.stringify(bk)].join('');
                        });
                        promise.catch(error=>{
                            console.error(vurl,error);
                        });
                    }
                    ,savehtml:function(){
-                       var resp = [this.obj.html];
-
-                       var respno = download(resp);
+                       var respno = download([this.showdata]);
                        if(respno<=0){
                            console.error('未找到合适的下载插件');
                        }
