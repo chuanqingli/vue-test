@@ -1,3 +1,4 @@
+document.title='用户消费查询';
 Vue.component('vue-test',
               {template:
                `<div>
@@ -156,7 +157,6 @@ function download(resp){
     return -1;
 }
 
-document.title='用户消费查询';
 var vm;// = new Vue({el:'#app'});
 window.onload = function(){
     vm = new Vue({
