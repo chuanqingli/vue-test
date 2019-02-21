@@ -40,19 +40,24 @@ Vue.component('vue-test',
                        this.dealBuff=[sss.size,0,0];
                        for(let key of sss)this.getuserinfo(this.soflag,key);
                    }
-                   ,reviewshowdata:function(mmm){
-                       var sss = this.sovalue.split(',');
-                       this.showdata=this.gethtml(sss,mmm);
+                   ,getbufmap:function(){
+                       var soflag=this.soflag;
+                       if(soflag==1)return this.idm;
+                       if(soflag==2)return this.strm;
+                       throws ['soflag=',soflag,'不被支持!'].join('');
+                   }
+                   ,reviewshowdata:function(){
+                       this.showdata=this.gethtml();
                    }
                    ,getuserinfo:function(soflag,sovalue){
                        this.showdata=['正在查询数据sss==>',soflag,sovalue].join(' ');
                        //已经查过的，就不用再查了
-                       var mmm=(soflag==1)?this.idm:this.strm;
+                       var mmm=this.getbufmap();
                        var dealbuff=this.dealBuff;
                        if(mmm[sovalue]!=null){
                            dealbuff[0]--;
                            if(dealbuff[0]==0){
-                               this.reviewshowdata(mmm);
+                               this.reviewshowdata();
                            }
                            return;
                        }
@@ -67,7 +72,8 @@ Vue.component('vue-test',
                            console.log(vurl,"==>",bk);
                            if(bk.idw>0&&bk.strw.length>0){
                                this.dealBuff[1]++;
-                               mmm[sovalue]=(soflag==1)?bk.strw:bk.idw;
+                               this.idm[bk.idw]=bk.strw;
+                               this.strm[bk.strw]=bk.idw;
                                console.log(JSON.stringify(bk));
                                return;
                            }else{
@@ -84,7 +90,7 @@ Vue.component('vue-test',
                                this.showdata=['数据处理完成==>',JSON.stringify(dealbuff)].join(' ');
                                return;
                            }
-                           this.reviewshowdata(mmm);
+                           this.reviewshowdata();
                        });
                    }
                    ,savehtml:function(){
@@ -94,9 +100,14 @@ Vue.component('vue-test',
                        }
                    }
 
-                   ,gethtml:function(sss,mmm){
+                   ,gethtml:function(){
+                       var soflag = this.soflag;
+                       var mmm=this.getbufmap();
+                       var sss = this.sovalue.split(',');
+                       var thkeys=['idwriter','strwriter'];
+                       if(soflag==2)thkeys.reverse();
                        console.log(sss,mmm);
-                       var resp = ['<table border=1><tr><th>key</th><th>value</th></tr>'];
+                       var resp = ['<table border=1><tr><th>',thkeys[0],'</th><th>',thkeys[1],'</th></tr>'];
                        for(let key in sss){
                            resp=resp.concat(['<tr><td>',sss[key],'</td><td>',mmm[sss[key]],'</td></tr>']);
                        }
